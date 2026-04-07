@@ -17,6 +17,15 @@ This project provides a deep-dive analysis into the startup ecosystem to identif
 - **Data Manipulation:** Pandas, NumPy
 - **Visualization:** Matplotlib, Seaborn, Plotly (Interactive)
 - **Machine Learning:** Scikit-Learn (Random Forest for Success Prediction)
+- # 🚀 Start-Up Market Research Intelligence Hub
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR-APP-URL-HERE.streamlit.app)
+
+## 🌐 Live Application
+**Click the badge above or visit:** [https://YOUR-APP-URL-HERE.streamlit.app](https://YOUR-APP-URL-HERE.streamlit.app)
+
+## 📖 About the Project
+This is a high-end market analysis tool that combines Data Engineering, Exploratory Data Analysis (EDA), and Machine Learning to predict startup success...
 
 ## 📈 Key Insights
 - **Insight 1:** (e.g., Fintech saw a 40% increase in Series A funding compared to 2022).
