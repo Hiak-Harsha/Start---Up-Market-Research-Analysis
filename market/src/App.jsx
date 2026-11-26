@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import SignupPage from './pages/SignupPage.jsx'
+import MinigamePage from './pages/MinigamePage.jsx'
 import SplashScreen from './components/SplashScreen.jsx'
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
             <Navbar />
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/play" element={<MinigamePage />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>

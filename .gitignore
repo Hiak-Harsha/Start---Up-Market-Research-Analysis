@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+market/node_modules/
+market/Backend/node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+market/dist/
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db

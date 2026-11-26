@@ -31,6 +31,7 @@ export default function Navbar() {
     { to: '/research', label: 'Research' },
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/history', label: 'History' },
+    { to: '/play', label: '🕹️ Play' },
   ]
 
   return (

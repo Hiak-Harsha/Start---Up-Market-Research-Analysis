@@ -1,0 +1,197 @@
+.page {
+  padding: 60px 0;
+  min-height: calc(100vh - 62px);
+}
+
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 16px 0 12px;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* ── GAME BOARD ── */
+.gameBoardCentered {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.gameStats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.statBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text3);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text);
+  transition: color 0.3s ease;
+}
+
+.urgent {
+  color: var(--rose) !important;
+  animation: heartPulse 1s infinite alternate;
+}
+
+@keyframes heartPulse {
+  to { transform: scale(1.1); text-shadow: 0 0 15px rgba(251, 113, 133, 0.6); }
+}
+
+/* ── GRID ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+.hole {
+  aspect-ratio: 1;
+  background: var(--bg);
+  border: 4px solid var(--surface2);
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+  cursor: crosshair;
+}
+
+/* ── MOLE (Competitor) ── */
+.mole {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 90%;
+  background: var(--accent); /* Brand purple */
+  border-radius: 40% 40% 0 0;
+  box-shadow: inset -5px -10px 0 rgba(0,0,0,0.2), 0 -5px 15px rgba(124, 106, 245, 0.5);
+  animation: popUp 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none; /* Let clicking hit the container to be more forgiving */
+}
+
+.moleFace {
+  position: absolute;
+  top: 30%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.moleEyeLeft, .moleEyeRight {
+  width: 12px;
+  height: 12px;
+  background: var(--text);
+  border-radius: 50%;
+  position: absolute;
+}
+.moleEyeLeft { left: 20%; }
+.moleEyeRight { right: 20%; }
+
+.moleMouth {
+  position: absolute;
+  top: 20px;
+  width: 24px;
+  height: 10px;
+  border-bottom: 3px solid var(--text);
+  border-radius: 0 0 50% 50%;
+}
+
+@keyframes popUp {
+  0% { transform: translate(-50%, 100%); }
+  100% { transform: translate(-50%, 0); }
+}
+
+/* ── OVERLAYS ── */
+.overlayStart, .overlayEnd {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 8, 16, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 10;
+}
+
+.ruleCard {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 40px;
+  border-radius: 16px;
+  max-width: 380px;
+}
+
+.ruleCard h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+.winText { color: var(--emerald); font-weight: bold; margin-top: 10px; }
+.goodText { color: var(--sky); font-weight: bold; margin-top: 10px; }
+.badText { color: var(--rose); font-weight: bold; margin-top: 10px; }
+
+.btnStart {
+  margin-top: 25px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(124, 106, 245, 0.4);
+}
+
+.btnStart:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 106, 245, 0.6);
+}
+
+.btnStart:active {
+  transform: translateY(1px);
+}

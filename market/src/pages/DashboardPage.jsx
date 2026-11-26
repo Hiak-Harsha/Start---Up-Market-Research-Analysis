@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -16,23 +16,24 @@ const SAMPLE_REPORT = {
   },
   createdAt: new Date().toISOString(),
   report: {
+    confidenceScore: 88,
     marketSize: {
-      summary: 'The HR tech market in India is valued at approximately $1.2B in 2024 and is projected to grow at 18% CAGR through 2029, driven by rapid startup growth and increasing demand for automation.',
-      tam: '$1.2B', sam: '$340M', som: '$28M', growth: '18% CAGR',
+      summary: 'The HR tech market in India is valued at approximately ₹10,000 Cr in 2024 and is projected to grow at 18% CAGR through 2029, driven by rapid startup growth and increasing demand for automation.',
+      tam: '₹10,000 Cr', sam: '₹2,800 Cr', som: '₹230 Cr', growth: '18% CAGR',
       year: '2024', projectedYear: '2029', projectedTam: '$2.8B',
       keyDrivers: ['Rapid startup ecosystem growth', 'Digital transformation mandates', 'Remote work adoption', 'Compliance automation demand'],
     },
     competitors: [
-      { name: 'Darwinbox', pricing: '$6–12/user/mo', strength: 'Enterprise features', weakness: 'Complex for SMBs', market: 'India-first', founded: '2015', funding: '$72M Series D', userBase: '2M+ employees' },
-      { name: 'Keka HR', pricing: '$4–8/user/mo', strength: 'Strong payroll module', weakness: 'Weak onboarding UX', market: 'India', founded: '2015', funding: '$57M Series A', userBase: '8,000+ companies' },
-      { name: 'GreytHR', pricing: '$3–7/user/mo', strength: 'Compliance focus', weakness: 'Dated interface', market: 'India', founded: '2012', funding: 'Bootstrapped', userBase: '20,000+ companies' },
-      { name: 'Rippling', pricing: '$8/user/mo', strength: 'Global payroll', weakness: 'Expensive for startups', market: 'US-centric', founded: '2016', funding: '$1.2B Series E', userBase: '5,000+ companies' },
-      { name: 'Zoho People', pricing: '$1–3/user/mo', strength: 'Affordable bundled', weakness: 'Limited AI features', market: 'Global', founded: '2008', funding: 'Bootstrapped', userBase: '50,000+ companies' },
+      { name: 'Darwinbox', marketShare: 42, pricing: '₹500–1,000/user/mo', strength: 'Enterprise features', weakness: 'Complex for SMBs', market: 'India-first', founded: '2015', funding: '₹600 Cr Series D', userBase: '2M+ employees' },
+      { name: 'Keka HR', marketShare: 25, pricing: '₹300–600/user/mo', strength: 'Strong payroll module', weakness: 'Weak onboarding UX', market: 'India', founded: '2015', funding: '₹470 Cr Series A', userBase: '8,000+ companies' },
+      { name: 'GreytHR', marketShare: 18, pricing: '₹250–500/user/mo', strength: 'Compliance focus', weakness: 'Dated interface', market: 'India', founded: '2012', funding: 'Bootstrapped', userBase: '20,000+ companies' },
+      { name: 'Rippling', marketShare: 8, pricing: '₹700/user/mo', strength: 'Global payroll', weakness: 'Expensive for startups', market: 'US-centric', founded: '2016', funding: '$1.2B Series E', userBase: '5,000+ companies' },
+      { name: 'Zoho People', marketShare: 7, pricing: '₹80–250/user/mo', strength: 'Affordable bundled', weakness: 'Limited AI features', market: 'Global', founded: '2008', funding: 'Bootstrapped', userBase: '50,000+ companies' },
     ],
     pricingModels: [
-      { model: 'Per-seat SaaS', usage: 72, desc: 'Monthly fee per employee.', avgPrice: '$4–12/user/mo', bestFor: 'Growing teams' },
-      { model: 'Freemium', usage: 38, desc: 'Free up to N employees.', avgPrice: 'Free + $8/extra', bestFor: 'Early-stage startups' },
-      { model: 'Module-based', usage: 55, desc: 'Pay for modules you use.', avgPrice: '$50–200/module', bestFor: 'Specific needs' },
+      { model: 'Per-seat SaaS', usage: 72, desc: 'Monthly fee per employee.', avgPrice: '₹300–1000/user/mo', bestFor: 'Growing teams' },
+      { model: 'Freemium', usage: 38, desc: 'Free up to N employees.', avgPrice: 'Free + ₹650/extra', bestFor: 'Early-stage startups' },
+      { model: 'Module-based', usage: 55, desc: 'Pay for modules you use.', avgPrice: '₹4,000–16,000/module', bestFor: 'Specific needs' },
       { model: 'Annual contract', usage: 44, desc: 'Discounted annual deal.', avgPrice: '20–30% discount', bestFor: 'Established teams' },
     ],
     painPoints: [
@@ -68,7 +69,7 @@ const SAMPLE_REPORT = {
     targetCustomerProfile: {
       primaryBuyer: 'HR Manager / People Ops Lead',
       companySize: '50–500 employees',
-      budget: '$500–2,000/month',
+      budget: '₹40,000–1,60,000/month',
       buyingProcess: 'Champion-led evaluation → IT security review → CFO approval',
       topPriorities: ['Time savings', 'Compliance coverage', 'Employee experience'],
       preferredChannels: ['LinkedIn', 'Peer recommendations', 'G2/Capterra reviews'],
@@ -325,7 +326,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {safeArr(r.competitors).map((c, i) => (
-                  <>
+                  <React.Fragment key={i}>
                     <tr
                       key={`row-${i}`}
                       className={`${styles.tableRow} ${expandedCompetitor === i ? styles.tableRowActive : ''}`}
@@ -367,7 +368,7 @@ export default function DashboardPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -383,7 +384,7 @@ export default function DashboardPage() {
             </div>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
-                data={r.competitors.map((c, i) => ({ name: c.name, score: Math.max(10, 90 - i * 14) }))}
+                data={r.competitors.map((c, i) => ({ name: c.name, score: c.marketShare || Math.max(5, 40 - i * 5) }))}
                 barCategoryGap="30%"
               >
                 <XAxis dataKey="name" tick={{ fill: 'var(--text3)', fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -634,6 +635,9 @@ export default function DashboardPage() {
             {isSample && <span className="tag tag-amber">Sample report</span>}
             <h1 className={styles.title}>{safeStr(entry.form?.idea, 'Market Research Report')}</h1>
             <div className={styles.meta}>
+              {entry.report?.confidenceScore && (
+                <span className="tag tag-emerald">Data Confidence: {entry.report.confidenceScore}%</span>
+              )}
               {entry.form?.region && <span className="tag tag-violet">{entry.form.region}</span>}
               {entry.form?.segment && <span className="tag tag-blue">{entry.form.segment}</span>}
               <span className={styles.date}>

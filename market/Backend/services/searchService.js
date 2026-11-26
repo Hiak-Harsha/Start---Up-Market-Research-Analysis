@@ -3,7 +3,7 @@ import axios from "axios";
 export async function searchWeb(query) {
   try {
     const res = await axios.post(
-      "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",
+      "https://api.tavily.com/search",
       {
         api_key: process.env.TAVILY_API_KEY,
         query,

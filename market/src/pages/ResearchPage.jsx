@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styles from './ResearchPage.module.css'
 import { runMarketResearch } from '../utils/api.js'
+import MinigamePage from './MinigamePage.jsx'
 
 const REGIONS = [
   'India', 'United States', 'United Kingdom', 'Southeast Asia',
@@ -45,6 +46,7 @@ export default function ResearchPage() {
   const [phase, setPhase] = useState('form') // 'form' | 'loading' | 'done'
   const [completedStages, setCompletedStages] = useState([])
   const [activeStage, setActiveStage] = useState(null)
+  const [playGame, setPlayGame] = useState(false)
 
   // Clear errors when navigating away and coming back
   useEffect(() => {
@@ -225,6 +227,21 @@ export default function ResearchPage() {
               Redirecting to your dashboard…
             </div>
           )}
+
+          {phase === 'loading' && !playGame && (
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <button onClick={() => setPlayGame(true)} style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '10px 16px', borderRadius: '10px', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: '600', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                🕹️ Bored while waiting? Play a game.
+              </button>
+            </div>
+          )}
+
+          {phase === 'loading' && playGame && (
+            <div style={{ marginTop: '32px' }}>
+              <MinigamePage compact={true} />
+            </div>
+          )}
+
         </div>
       </div>
     )

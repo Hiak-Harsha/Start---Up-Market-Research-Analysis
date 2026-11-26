@@ -7,8 +7,8 @@
  */
 
 import express from "express";
-import axios from "axios";
 import { validateString } from "../server.js";
+import { callLLM, handleLLMError } from "../services/aiService.js";
 
 const router = express.Router();
 
@@ -33,52 +33,23 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "A valid report object is required." });
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: "OPENROUTER_API_KEY not configured." });
-
   console.log(`[Chat] question="${question.trim().slice(0, 80)}..."`);
 
   try {
     const reportContext = JSON.stringify(report, null, 2).slice(0, 6000); // token guard
+    const raw = await callLLM({
+      systemPrompt: CHAT_SYSTEM_PROMPT,
+      userPrompt: `MARKET RESEARCH REPORT:\n${reportContext}\n\nUSER QUESTION: ${question.trim()}`,
+      maxTokens: 800,
+      temperature: 0.4,
+      timeout: 30000,
+    });
 
-    const { data } = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: "anthropic/claude-3.5-haiku",
-        max_tokens: 800,
-        temperature: 0.4,
-        messages: [
-          { role: "system", content: CHAT_SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `MARKET RESEARCH REPORT:\n${reportContext}\n\nUSER QUESTION: ${question.trim()}`,
-          },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:5173",
-          "X-Title": "MarketLens",
-        },
-        timeout: 30000,
-      }
-    );
-
-    const answer = data.choices?.[0]?.message?.content?.trim() || "No response generated.";
+    const answer = raw.trim() || "No response generated.";
     console.log(`[Chat] ✅ answered`);
     res.json({ answer });
-
   } catch (err) {
-    console.error("[Chat] Error:", err.message);
-    if (err.response?.status === 401) {
-      return res.status(401).json({ error: "Invalid API key." });
-    }
-    if (err.code === "ECONNABORTED") {
-      return res.status(504).json({ error: "Request timed out. Please try again." });
-    }
-    res.status(500).json({ error: err.message || "Chat failed. Please try again." });
+    return handleLLMError(res, err, "Chat", "Chat failed. Please try again.");
   }
 });
 

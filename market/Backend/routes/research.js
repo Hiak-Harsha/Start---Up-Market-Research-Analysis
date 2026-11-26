@@ -10,6 +10,7 @@
 import express from "express";
 import axios from "axios";
 import { validateString } from "../server.js";
+import { callLLM, handleLLMError } from "../services/aiService.js";
 
 const router = express.Router();
 
@@ -44,34 +45,15 @@ async function tavilySearch(query, maxResults = 5) {
   }
 }
 
-// ── OpenRouter (Claude) call ─────────────────────────────────────────────────
+// ── AI synthesis call ─────────────────────────────────────────────────────────
 async function callClaude(systemPrompt, userPrompt) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY not configured");
-
-  const { data } = await axios.post(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      model: "anthropic/claude-3.5-haiku",
-      max_tokens: 4000,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5173",
-        "X-Title": "MarketLens",
-      },
-      timeout: 60000,
-    }
-  );
-
-  return data.choices?.[0]?.message?.content || "";
+  return callLLM({
+    systemPrompt,
+    userPrompt,
+    maxTokens: 4000,
+    temperature: 0.3,
+    timeout: 60000,
+  });
 }
 
 // ── Parallel research tracks ─────────────────────────────────────────────────
@@ -99,12 +81,15 @@ CRITICAL RULES:
 3. Use actual numbers, company names, and specific insights from the research data provided.
 4. If certain data is not in the research, make educated estimates clearly labelled as "Est." but keep them realistic.
 5. TAM/SAM/SOM must be dollar values (e.g. "$2.4B"). Growth must include CAGR.
-6. Competitors: include 4–6 real companies. Include pricing in the format "$X–Y/user/mo" or equivalent.
+6. Competitors: include 4–6 real companies. Include pricing format "$X–Y/user/mo". Also provide a realistic "marketShare" (integer 1-100) indicating their dominance.
 7. Pain points: frequency must be realistic percentages (40–95%). Severity: "high", "medium", or "low".
 8. Investor sentiment: "bullish", "neutral", or "bearish".
+9. Strictly adapt all financial values (TAM, SAM, pricing, budget) to match the standard currency of the TARGET REGION (e.g. use INR '₹' and local grouping formats like Lakhs/Crores for India). Do not default to USD unless appropriate.
+10. At the root, generate a "confidenceScore" (integer 0-100) based on the depth and reliability of the data sources.
 
 OUTPUT SCHEMA (output this exact structure):
 {
+  "confidenceScore": 85,
   "marketSize": {
     "summary": "2–3 sentence market overview with specific numbers",
     "tam": "$X.XB",
@@ -119,6 +104,7 @@ OUTPUT SCHEMA (output this exact structure):
   "competitors": [
     {
       "name": "Company Name",
+      "marketShare": 45,
       "pricing": "$X–Y/user/mo",
       "strength": "Key strength",
       "weakness": "Key weakness",
@@ -207,8 +193,28 @@ router.post("/", async (req, res) => {
       ...investorData.results,
     ]
       .filter(r => r.title)
-      .slice(0, 10)
+      .slice(0, 20)
       .map(r => r.title);
+
+    // Calculate real-time programmatic confidence rating based on data fetch success
+    let sourceCount = allSources.length;
+    let volumeScore = Math.min((sourceCount / 16) * 50, 50); // Up to 50% for finding enough varied sources (16+ is perfect)
+
+    let answerScore = 0;
+    if (marketData.answer?.length > 50) answerScore += 5;
+    if (competitorData.answer?.length > 50) answerScore += 5;
+    if (painData.answer?.length > 50) answerScore += 5;
+    if (investorData.answer?.length > 50) answerScore += 5; // Up to 20% for direct AI summary answers from Tavily
+
+    let combinedContent = [
+      ...marketData.results,
+      ...competitorData.results,
+      ...painData.results,
+      ...investorData.results
+    ].map(r => r.content || "").join(" ");
+    let contentScore = Math.min((combinedContent.length / 5000) * 30, 30); // Up to 30% for data depth
+
+    const realConfidenceScore = Math.round(Math.max(12, volumeScore + answerScore + contentScore));
 
     // Build research context for Claude
     const userPrompt = `
@@ -240,11 +246,20 @@ Based on ALL the research above, generate a complete market research report for 
     // Synthesise with Claude
     const raw = await callClaude(SYSTEM_PROMPT, userPrompt);
 
-    // Parse JSON — strip any accidental markdown fences
+    // Parse JSON — strip any <think> blocks, markdown fences, or surrounding prose
     let report;
     try {
-      const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-      report = JSON.parse(cleaned);
+      const stripped = raw
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .replace(/```(?:json)?/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      const firstBrace = stripped.indexOf("{");
+      const lastBrace = stripped.lastIndexOf("}");
+      const jsonText = firstBrace !== -1 && lastBrace > firstBrace
+        ? stripped.slice(firstBrace, lastBrace + 1)
+        : stripped;
+      report = JSON.parse(jsonText);
     } catch (parseErr) {
       console.error("[Research] JSON parse failed:", raw.slice(0, 500));
       return res.status(502).json({
@@ -257,22 +272,15 @@ Based on ALL the research above, generate a complete market research report for 
     if (allSources.length > 0) {
       report.sources = [...new Set([...(report.sources || []), ...allSources])].slice(0, 8);
     }
+    
+    // Overwrite any hallucinated AI score with our math-backed real-time score
+    report.confidenceScore = realConfidenceScore;
 
-    console.log(`[Research] ✅ Report generated for: ${cleanIdea}`);
+    console.log(`[Research] ✅ Report generated for: ${cleanIdea} | Real Confidence: ${realConfidenceScore}%`);
     res.json({ report });
 
   } catch (err) {
-    console.error("[Research] Error:", err.message);
-    if (err.response?.status === 401) {
-      return res.status(401).json({ error: "Invalid API key. Check your OPENROUTER_API_KEY." });
-    }
-    if (err.response?.status === 429) {
-      return res.status(429).json({ error: "AI rate limit hit. Please wait a moment and try again." });
-    }
-    if (err.code === "ECONNABORTED") {
-      return res.status(504).json({ error: "Request timed out. The AI is busy — please try again." });
-    }
-    res.status(500).json({ error: err.message || "Research failed. Please try again." });
+    return handleLLMError(res, err, "Research", "Research failed. Please try again.");
   }
 });
 

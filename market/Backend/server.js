@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import helmet from "helmet";
 import researchRoute from "./routes/research.js";
 import chatRoute from "./routes/chat.js";
 
@@ -9,6 +10,7 @@ dotenv.config();
 const app = express();
 
 // ── Middleware ──────────────────────────────────────────────────────────────
+app.use(helmet());
 app.use(cors({ origin: ["http://localhost:5173", "http://localhost:3000"] }));
 app.use(express.json({ limit: "50kb" }));
 
@@ -58,6 +60,7 @@ app.get("/health", (req, res) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     env: {
+      gemini: !!process.env.GEMINI_API_KEY,
       openrouter: !!process.env.OPENROUTER_API_KEY,
       tavily: !!process.env.TAVILY_API_KEY,
     },
@@ -73,8 +76,21 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ MarketLens backend running → http://localhost:${PORT}`);
-  if (!process.env.OPENROUTER_API_KEY) console.warn("⚠️  OPENROUTER_API_KEY not set");
+  if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+    console.warn("⚠️  Neither GEMINI_API_KEY nor OPENROUTER_API_KEY is set");
+  }
   if (!process.env.TAVILY_API_KEY) console.warn("⚠️  TAVILY_API_KEY not set");
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\n❌ Error: Port ${PORT} is already in use.`);
+    console.error(`You likely have another terminal tab running the backend already.`);
+    console.error(`Close the other server to free the port, or just use the running one!\n`);
+    process.exit(1);
+  } else {
+    console.error(e);
+  }
 });
